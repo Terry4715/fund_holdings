@@ -30,18 +30,17 @@ Database.initialise(user=db_user,
 
 
 # REGION database table -------------------------------------------------------
-# obtains unique countries from the dataframe 'country' column
+# obtains unique countries from the excel_data dataframes 'country' column
 countries = excel_data.country.unique()
 # removes blank values from unique list of countries
 countries = filter(lambda x: x == x, countries)
-# formats all counties to title case
+# formats all countries to title case
 countries = map(lambda x: x.title(), countries)
 # converts countries object into a list of tuples - required for upload
 countries = list(zip(countries))
 
 # uploads countries into 'region' database table without creating duplicates
 with CursorFromPool() as cursor:
-    print("Uploading data into database...")
     sql_values = countries
     sql_params = ','.join(['%s'] * len(sql_values))
     sql_insert = f'''INSERT INTO region (country)
@@ -51,31 +50,33 @@ with CursorFromPool() as cursor:
 
 
 # FUNDS database table --------------------------------------------------------
-# creates a subset dataframe used for the 'funds' database table
-df_funds = excel_data[['fund_name', 'fund_isin', 'fund_ric']]
-# drops duplicate records based on 'fund_name' column
-df_funds = df_funds.drop_duplicates(subset=['fund_name'])
-# converts dataframe into numpy array then list of tuples - required for upload
-df_funds = list(map(tuple, df_funds.to_numpy()))
-
-# uploads fund_names into 'funds' database table without creating duplicates
+# load existing 'funds' table from database
 with CursorFromPool() as cursor:
-    print("Uploading data into database...")
-    sql_values = df_funds
-    sql_params = ','.join(['%s'] * len(sql_values))
-    sql_insert = f'''INSERT INTO funds (fund_name, fund_isin, fund_ric)
-                     VALUES {sql_params}
-                     ON CONFLICT (fund_name) DO NOTHING;'''
-    cursor.execute(sql_insert, sql_values)
+    cursor.execute("SELECT * FROM funds;")
+    # converts sql response from cursor object to a list of tuples
+    funds_table = cursor.fetchall()
+    # converts list of tuples into dataframe
+    funds_table = pd.DataFrame(funds_table, columns=['fund_id',
+                                                     'fund_name',
+                                                     'fund_isin',
+                                                     'fund_ric'])
 
-# this works but need to address issue with duplicate uploads, name indexed?
+# creates a subset dataframe from excel_data dataframe
+new_funds = excel_data[['fund_name', 'fund_isin', 'fund_ric']]
+# drops duplicate records based on 'fund_name' column
+new_funds = new_funds.drop_duplicates(subset=['fund_name'])
+# drops rows with 'fund_name' that already exist in 'funds' database table
+new_funds = (new_funds[~new_funds['fund_name'].str.lower()
+             .isin(funds_table['fund_name'].str.lower())])
+# converts dataframe into numpy array then list of tuples - required for upload
+new_funds = list(map(tuple, new_funds.to_numpy()))
 
-# comparator2_pricing_data_list = create_pricing_subset_list(comp2)
-
-
-# load data from database
-# with CursorFromPool() as cursor:
-#     print("Loading data from database...")
-#     cursor.execute("SELECT * FROM testing;")
-#     for record in cursor:
-#         print(record)
+# if statement ensures there are new funds to upload
+if len(new_funds):
+    # uploads new funds into 'funds' database table without creating duplicates
+    with CursorFromPool() as cursor:
+        sql_values = new_funds
+        sql_params = ','.join(['%s'] * len(sql_values))
+        sql_insert = f'''INSERT INTO funds (fund_name, fund_isin, fund_ric)
+                         VALUES {sql_params};'''
+        cursor.execute(sql_insert, sql_values)
