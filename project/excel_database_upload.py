@@ -1,4 +1,4 @@
-# #%%
+#%%
 import os
 from dotenv import load_dotenv
 from database import Database, CursorFromPool
@@ -27,26 +27,7 @@ Database.initialise(user=db_user,
                     password=db_password,
                     host=db_host,
                     database=db_name)
-# #%%
-
-# REGION database table -------------------------------------------------------
-# obtains unique countries from the excel_data dataframes 'country' column
-countries = excel_data.country.unique()
-# removes blank values from unique list of countries
-countries = filter(lambda x: x == x, countries)
-# formats all countries to title case
-countries = map(lambda x: x.title(), countries)
-# converts countries object into a list of tuples - required for upload
-countries = list(zip(countries))
-
-# uploads countries into 'region' database table without creating duplicates
-with CursorFromPool() as cursor:
-    sql_values = countries
-    sql_params = ','.join(['%s'] * len(sql_values))
-    sql_insert = f'''INSERT INTO region (country)
-                     VALUES {sql_params}
-                     ON CONFLICT (country) DO NOTHING;'''
-    cursor.execute(sql_insert, sql_values)
+#%%
 
 
 # FUNDS database table --------------------------------------------------------
@@ -98,7 +79,7 @@ with CursorFromPool() as cursor:
                                        fund_nav_table['fund_nav_date']))
     fund_nav_table['fund_nav'] = pd.to_numeric(fund_nav_table['fund_nav'])
 
-# load newly updated 'funds' table from database --- foreign key
+# load newly updated 'funds' table from database --- 'fund_id' foreign key
 with CursorFromPool() as cursor:
     cursor.execute("SELECT * FROM funds;")
     # converts sql response from cursor object to a list of tuples
@@ -119,12 +100,11 @@ new_navs = (pd.merge(funds_table['fund_id'], new_navs[['date', 'fund_nav']],
                      right_on=new_navs['fund_name'].str.lower(),
                      how='right'))
 
-# keeps rows with 'fund_id' that already exist in 'fund_nav' database table
+# keeps rows with 'fund_id' and 'date' already in 'fund_nav' database table
 update_navs = (new_navs[new_navs.set_index(['fund_id', 'date']).index
                .isin(fund_nav_table
                .set_index(['fund_id', 'fund_nav_date']).index)]
                .iloc[:, 1:])  # drops key column created by merge
-
 # converts dataframe into numpy array then list of tuples - required for upload
 update_navs = list(map(tuple, update_navs.to_numpy()))
 
@@ -158,5 +138,103 @@ if len(insert_navs):
         sql_insert = f'''INSERT INTO fund_nav (fund_id, fund_nav_date, fund_nav)
                          VALUES {sql_params};'''
         cursor.execute(sql_insert, sql_values)
+
+
+# REGION database table -------------------------------------------------------
+# obtains unique countries from the excel_data dataframes 'country' column
+countries = excel_data.country.unique()
+# removes blank values from unique list of countries
+countries = filter(lambda x: x == x, countries)
+# formats all countries to title case
+countries = map(lambda x: x.title(), countries)
+# converts countries object into a list of tuples - required for upload
+countries = list(zip(countries))
+
+# uploads countries into 'region' database table without creating duplicates
+with CursorFromPool() as cursor:
+    sql_values = countries
+    sql_params = ','.join(['%s'] * len(sql_values))
+    sql_insert = f'''INSERT INTO region (country)
+                     VALUES {sql_params}
+                     ON CONFLICT (country) DO NOTHING;'''
+    cursor.execute(sql_insert, sql_values)
+
+
+# ASSETS database table -------------------------------------------------------
+# load existing 'assets' table from database
+with CursorFromPool() as cursor:
+    cursor.execute("SELECT * FROM assets;")
+    # converts sql response from cursor object to a list of tuples
+    assets_table = cursor.fetchall()
+    # converts list of tuples into dataframe
+    assets_table = pd.DataFrame(assets_table, columns=['asset_id',
+                                                       'asset_name',
+                                                       'asset_isin',
+                                                       'asset_ric',
+                                                       'asset_type',
+                                                       'sector',
+                                                       'country'])
+
+# creates a subset dataframe from excel_data dataframe
+new_assets = (excel_data[['asset_name', 'asset_isin', 'asset_ric',
+                          'asset_type', 'sector', 'country']])
+# title cases 'country' column so that it aligns with column in 'region' table
+new_assets['country'] = new_assets['country'].str.title()
+# drops duplicate records based on 'asset_name' column
+new_assets = new_assets.drop_duplicates(subset=['asset_name'])
+
+# adds 'asset_id' by merging with 'assets_table' on case insensitive asset name
+new_assets = (pd.merge(assets_table['asset_id'], new_assets,
+                       left_on=assets_table['asset_name'].str.lower(),
+                       right_on=new_assets['asset_name'].str.lower(),
+                       how='right'))
+
+
+# drops rows with 'fund_id' that already exist in 'fund_nav' database table
+insert_navs = (new_navs[~new_navs['fund_id']
+               .isin(fund_nav_table['fund_id'])]
+               .iloc[:, 1:])  # drops key column created by merge
+# converts dataframe into numpy array then list of tuples - required for upload
+insert_navs = list(map(tuple, insert_navs.to_numpy()))
+
+
+# keeps rows with 'asset_id' that already exist in 'assets' database table
+update_assets = (new_assets[new_assets['asset_id']
+                 .isin(assets_table['asset_id'])]
+                 .iloc[:, 1:])  # drops key column created by merge)
+# converts dataframe into numpy array then list of tuples - required for upload
+update_assets = list(map(tuple, update_assets.to_numpy()))
+
+# drops rows with 'asset_id' that already exist in 'assets' database table
+insert_assets = (new_assets[~new_assets['asset_id']
+                 .isin(assets_table['asset_id'])]
+                 .iloc[:, 1:])  # drops key column created by merge)
+# converts dataframe into numpy array then list of tuples - required for upload
+insert_assets = list(map(tuple, insert_assets.to_numpy()))
+
+# if statement ensures there is asset data to upload
+if len(update_assets):
+    # updates fund navs within the 'fund_nav' database table
+    with CursorFromPool() as cursor:
+        sql_values = update_assets
+        sql_params = ','.join(['%s'] * len(sql_values))
+        sql_insert = f'''UPDATE assets AS t
+                         SET asset_name = e.date,
+                             fund_nav = e.fund_nav
+                         FROM (VALUES {sql_params})
+                         AS e(fund_id, date, fund_nav)
+                         WHERE e.fund_id = t.fund_id;'''
+        cursor.execute(sql_insert, sql_values)
+
+# if statement ensures there is fund_nav data to upload
+if len(insert_navs):
+    # uploads new fund navs into 'fund_nav' database table
+    with CursorFromPool() as cursor:
+        sql_values = insert_navs
+        sql_params = ','.join(['%s'] * len(sql_values))
+        sql_insert = f'''INSERT INTO fund_nav (fund_id, fund_nav_date, fund_nav)
+                         VALUES {sql_params};'''
+        cursor.execute(sql_insert, sql_values)
+
 
 # idea - build class so database tables can be called via methods - refine code
