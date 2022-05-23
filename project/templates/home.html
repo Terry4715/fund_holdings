@@ -1,12 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
-    Hello, World!
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+    <main class="main main--home">
+        <section class="main__section">
+            <h2>Asset Allocation</h2>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+            <canvas id="myChart"></canvas>
+            <script>
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple'],
+                    datasets: [{
+                        // label: '# of Votes',
+                        data: [12, 19, 3, 5, 8],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        // borderColor: [
+                        //     'rgba(255, 99, 132, 1)',
+                        //     'rgba(54, 162, 235, 1)',
+                        //     'rgba(255, 206, 86, 1)',
+                        //     'rgba(75, 192, 192, 1)',
+                        //     'rgba(153, 102, 255, 1)',
+                        //     'rgba(255, 159, 64, 1)'
+                        // ],
+                        borderWidth: 1
+                    }]
+                },
+                // options: {
+                //     scales: {
+                //         y: {
+                //             beginAtZero: true
+                //         }
+                //     }
+                // }
+            });
+            </script>
+        </section>
+
+        <section class="main__section">
+            <h2>Fund Assets</h2>
+            <table id="data" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset Name</th>
+                        <th>Weight</th>
+                        <th>Notional Value</th>
+                        <th>Type</th>
+                        <th>Region</th>
+                        <th>Sector</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in fund_assets%}
+                    <tr>
+                        <td>{{ asset[0] }}</td>
+                        <td>{{ asset[1] }}</td>
+                        <td>{{ asset[2] }}</td>
+                        <td>{{ asset[3] }}</td>
+                        <td>{{ asset[4] }}</td>
+                        <td>{{ asset[5] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        jQuery(document).ready(function() {
+        jQuery('#loading').fadeOut(1000);
+    });
+    </script>
+    <script>
+        $(document).ready(function () {
+            $('#data').DataTable({
+                columns: [
+                    {data: 'name'},
+                    {data: 'weight',
+                    render: function (data, type) {
+                        var pct = (data * 100).toFixed(2) + "%";
+                        return pct;},
+                        searchable: false},
+                    {data: 'notional',
+                    render: function (data, type) {
+                        var number = $.fn.dataTable.render
+                            .number(',')
+                            .display(data);
+                        return number;},
+                        searchable: false},
+                    {data: 'type'},
+                    {data: 'region'},
+                    {data: 'sector', orderable: false}
+                ],
+            });
+        });
+    </script>
+{% endblock %}
