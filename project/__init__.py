@@ -1,7 +1,9 @@
+#%%
 import os
 from dotenv import load_dotenv
 from .database import Database, CursorFromPool
 from flask import Flask, render_template
+import json
 
 
 # loading environment variables used to hide database credentials
@@ -24,24 +26,57 @@ with CursorFromPool() as cursor:
     # converts sql response from cursor object to a list of tuples
     fund_assets = cursor.fetchall()
 
+# load asset type allocation using fund_assets view from database
+with CursorFromPool() as cursor:
+    cursor.execute('''SELECT SUM(weight) AS weight,
+                          asset_type
+                      FROM fund_assets
+                      GROUP BY asset_type
+                      ORDER BY weight DESC;''')
+    # converts sql response from cursor object to a list of tuples
+    fund_a_type = cursor.fetchall()
+# converts list of tuples into a dictionary
+fund_a_type_label = [data[1] for data in fund_a_type]
+fund_a_type_data = [str(data[0]) for data in fund_a_type]
+#%%
+
+# load asset region allocation using fund_assets view from database
+with CursorFromPool() as cursor:
+    cursor.execute('''SELECT SUM(weight) as weight,
+                          region
+                      FROM fund_assets
+                      GROUP BY region
+                      ORDER BY weight DESC;''')
+    # converts sql response from cursor object to a list of tuples
+    fund_a_region = cursor.fetchall()
+# converts list of tuples into a dictionary
+fund_a_region_dict = dict((y, x) for x, y in fund_a_region)
+
+# load equity sector allocation using fund_assets view from database
+with CursorFromPool() as cursor:
+    cursor.execute('''SELECT SUM(ROUND((notional /
+                      (SELECT SUM(notional) from fund_assets
+                       WHERE asset_type = 'Equity')), 4)) as weight,
+                          sector
+                      FROM fund_assets
+                      WHERE asset_type = 'Equity'
+                      GROUP BY sector
+                      ORDER BY weight DESC;''')
+    # converts sql response from cursor object to a list of tuples
+    fund_a_sector = cursor.fetchall()
+# converts list of tuples into a dictionary
+fund_a_sector_dict = dict((y, x) for x, y in fund_a_sector)
+
 
 app = Flask(__name__)
 
 
-def to_dict(self):
-    return {
-        'name': self.name,
-        'weight': self.weight,
-        'notional': self.notional,
-        'type': self.type,
-        'region': self.region,
-        'sector': self.sector
-        }
-
-
 @app.route("/")
 def home():
-    return render_template("home.html", fund_assets=fund_assets)
+    return render_template("home.html",
+                           fund_assets=fund_assets,
+                           a_type_label=json.dumps(fund_a_type_label),
+                           a_type_data=json.dumps(fund_a_type_data))
 
 
 @app.errorhandler(404)
