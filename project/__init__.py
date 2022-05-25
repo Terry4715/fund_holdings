@@ -1,4 +1,3 @@
-#%%
 import os
 from dotenv import load_dotenv
 from .database import Database, CursorFromPool
@@ -26,6 +25,24 @@ with CursorFromPool() as cursor:
     # converts sql response from cursor object to a list of tuples
     fund_assets = cursor.fetchall()
 
+# load fund holdings from database
+with CursorFromPool() as cursor:
+    cursor.execute('''SELECT asset_name,
+                             fund_asset_weight,
+                             ROUND(SUM(fund_asset_weight * fund_nav.fund_nav)
+                                     ,0) AS notional,
+                             asset_isin
+                      FROM fund_holdings
+                      INNER JOIN assets
+                      ON assets.asset_id = fund_holdings.asset_id
+                      INNER JOIN fund_nav
+                      ON fund_nav.fund_id = fund_holdings.fund_id
+                      WHERE fund_holdings.fund_id = 1
+                      GROUP BY asset_name, fund_asset_weight, asset_isin
+                      ORDER BY notional DESC;''')
+    # converts sql response from cursor object to a list of tuples
+    fund_holdings = cursor.fetchall()
+
 # load asset type allocation using fund_assets view from database
 with CursorFromPool() as cursor:
     cursor.execute('''SELECT SUM(weight) AS weight,
@@ -35,10 +52,9 @@ with CursorFromPool() as cursor:
                       ORDER BY weight DESC;''')
     # converts sql response from cursor object to a list of tuples
     fund_a_type = cursor.fetchall()
-# converts list of tuples into a dictionary
+# converts list of tuples into ordered lists
 fund_a_type_label = [data[1] for data in fund_a_type]
 fund_a_type_data = [str(data[0]) for data in fund_a_type]
-#%%
 
 # load asset region allocation using fund_assets view from database
 with CursorFromPool() as cursor:
@@ -49,8 +65,9 @@ with CursorFromPool() as cursor:
                       ORDER BY weight DESC;''')
     # converts sql response from cursor object to a list of tuples
     fund_a_region = cursor.fetchall()
-# converts list of tuples into a dictionary
-fund_a_region_dict = dict((y, x) for x, y in fund_a_region)
+# converts list of tuples into ordered lists
+fund_a_region_label = [data[1] for data in fund_a_region]
+fund_a_region_data = [str(data[0]) for data in fund_a_region]
 
 # load equity sector allocation using fund_assets view from database
 with CursorFromPool() as cursor:
@@ -64,8 +81,9 @@ with CursorFromPool() as cursor:
                       ORDER BY weight DESC;''')
     # converts sql response from cursor object to a list of tuples
     fund_a_sector = cursor.fetchall()
-# converts list of tuples into a dictionary
-fund_a_sector_dict = dict((y, x) for x, y in fund_a_sector)
+# converts list of tuples into ordered lists
+fund_a_sector_label = [data[1] for data in fund_a_sector]
+fund_a_sector_data = [str(data[0]) for data in fund_a_sector]
 
 
 app = Flask(__name__)
@@ -75,8 +93,13 @@ app = Flask(__name__)
 def home():
     return render_template("home.html",
                            fund_assets=fund_assets,
+                           fund_holdings=fund_holdings,
                            a_type_label=json.dumps(fund_a_type_label),
-                           a_type_data=json.dumps(fund_a_type_data))
+                           a_type_data=json.dumps(fund_a_type_data),
+                           a_region_label=json.dumps(fund_a_region_label),
+                           a_region_data=json.dumps(fund_a_region_data),
+                           a_sector_label=json.dumps(fund_a_sector_label),
+                           a_sector_data=json.dumps(fund_a_sector_data))
 
 
 @app.errorhandler(404)
