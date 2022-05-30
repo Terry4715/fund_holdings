@@ -4,10 +4,6 @@
     box-sizing: border-box;
 }
 
-html {
-    font-family: Lato, "sans-serif";
-}
-
 #loading {
     position: fixed;
     width: 100%;
@@ -16,17 +12,22 @@ html {
     z-index: 9999;
     }
 
+html {
+    font-size: 16px;
+}
+
 body {
-    margin-top: 80px;
+    margin-top: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ubuntu, sans-serif;
+    color: #002244;
 }
 
 .header {
-    margin-top: 2rem;
     text-align: center;
+    color: inherit;
 }
 
 .nav {
-    margin-bottom: 3rem;
     font-size: 1.2rem;
     justify-content: center;
 }
@@ -50,6 +51,7 @@ body {
     flex-direction: column;
     justify-content: center;
     margin: 0 auto;
+    padding: 2rem;
 }
 
 .main--error {
@@ -59,32 +61,31 @@ body {
     line-height: 150%;
 }
 
-.main__section {
-    padding: 2rem 2rem;
-    /* display: flex;
-    flex-direction: column; */
-    align-items: center;
-}
-
-.main__section--allocation {
-    padding: 2rem 2rem;
+.section__dfh_aa {
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: space-around;
+}
+
+.section__aa_ra {
+    display: flex;
+    flex-direction: column;
+}
+
+.main__section {
+    padding: 1rem 0rem;
 }
 
 .allocation {
-    max-width: 500px;
-    max-height: 500px;
+    width: 300px;
+    /* margin: auto; */
 }
 
 .sector_allocation {
-    max-width: 800px;
-    max-height: 800px;
+    width: 800px;
     margin: auto;
 }
 
-.table_div {
-    padding: 2rem 2rem;
-    max-width: 50%;
+.dfh_table {
+    width: 60%;
 }

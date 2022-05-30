@@ -1,55 +1,85 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <main class="main">
-        <section class="main__section--allocation">
-            <div class="allocation">
-            <h2>Asset Allocation</h2>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-            <canvas id="asset_allocation_chart"></canvas>
-            <script>
-            let asset_type_label = JSON.parse({{ a_type_label | tojson }});
-            let asset_type_data = JSON.parse({{ a_type_data | tojson }});
-            const aa_ctx = document.getElementById('asset_allocation_chart').getContext('2d');
-            const aa_chart = new Chart(aa_ctx, {
-                type: 'pie',
-                data: {
-                    labels: asset_type_label,
-                    datasets: [{
-                        data: asset_type_data,
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)'
-                        ],
-                        // borderColor: [
-                        //     'rgba(54, 162, 235, 1)',
-                        //     'rgba(255, 99, 132, 1)',
-                        //     'rgba(255, 206, 86, 1)',
-                        //     'rgba(75, 192, 192, 1)',
-                        //     'rgba(153, 102, 255, 1)',
-                        //     'rgba(255, 159, 64, 1)'
-                        // ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    tooltips: {
-                        callbacks: {
-                            label: function(tooltipItem, data) {
-                            return data['labels'][tooltipItem['index']] + ': ' + data['datasets'][0]['data'][tooltipItem['index']] + '%';
-                            }
-                        }
-                        }
-                }
-            });
-            </script>
-            </div>
+    <main role="main" class="main">
+        <div class="section__dfh_aa">
+        <section class="main__section dfh_table">
+            <h2>Fund Holdings</h2>
+            <table id="fund_data" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset Name</th>
+                        <th>Weight</th>
+                        <th>Notional Value</th>
+                        <th>ISIN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for holding in fund_holdings%}
+                    <tr>
+                        <td>{{ holding[0] }}</td>
+                        <td>{{ holding[1] }}</td>
+                        <td>{{ holding[2] }}</td>
+                        <td>{{ holding[3] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
 
-            <div class="allocation">
+            <div class="section__aa_ra">
+            <section class="main__section allocation">
+                <h2>Asset Allocation</h2>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+                <canvas id="asset_allocation_chart"></canvas>
+                <script>
+                let asset_type_label = JSON.parse({{ a_type_label | tojson }});
+                let asset_type_data = JSON.parse({{ a_type_data | tojson }});
+                const aa_ctx = document.getElementById('asset_allocation_chart').getContext('2d');
+                const aa_chart = new Chart(aa_ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: asset_type_label,
+                        datasets: [{
+                            data: asset_type_data,
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            // borderColor: [
+                            //     'rgba(54, 162, 235, 1)',
+                            //     'rgba(255, 99, 132, 1)',
+                            //     'rgba(255, 206, 86, 1)',
+                            //     'rgba(75, 192, 192, 1)',
+                            //     'rgba(153, 102, 255, 1)',
+                            //     'rgba(255, 159, 64, 1)'
+                            // ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            tooltips: {
+                                callbacks: {
+                                    label: function(tooltipsItem, data) {
+                                    return data['labels'][tooltipItem['index']] + ': ' + data['datasets'][0]['data'][tooltipItem['index']] + '%';
+                                    }
+                                }
+                            },
+                            legend: {
+                                position: 'right',
+                                align: 'middle'
+                        }}
+                    }
+                });
+                </script>
+            </section>
+
+            <section class="main__section allocation">
                 <h2>Regional Allocation</h2>
                 <canvas id="region_allocation_chart"></canvas>
                 <script>
@@ -82,86 +112,63 @@
                             borderWidth: 2
                         }]
                     },
-                    // options: {
-                    //     scales: {
-                    //         y: {
-                    //             beginAtZero: true
-                    //         }
-                    //     }
-                    // }
-                });
-                </script>
-            </div>
-            </section>
-            <section>
-            <div class="sector_allocation">
-                <h2>Sector Allocation</h2>
-                <canvas id="sector_allocation_chart"></canvas>
-                <script>
-                let asset_sector_label = JSON.parse({{ a_sector_label | tojson }});
-                let asset_sector_data = JSON.parse({{ a_sector_data | tojson }});
-                const sa_ctx = document.getElementById('sector_allocation_chart').getContext('2d');
-                const sa_chart = new Chart(sa_ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: asset_sector_label,
-                        datasets: [{
-                            data: asset_sector_data,
-                            backgroundColor: [
-                                'rgba(54, 162, 235, 0.2)',
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(255, 206, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)',
-                                'rgba(153, 102, 255, 0.2)',
-                                'rgba(255, 159, 64, 0.2)'
-                            ],
-                            // borderColor: [
-                            //     'rgba(54, 162, 235, 1)',
-                            //     'rgba(255, 99, 132, 1)',
-                            //     'rgba(255, 206, 86, 1)',
-                            //     'rgba(75, 192, 192, 1)',
-                            //     'rgba(153, 102, 255, 1)',
-                            //     'rgba(255, 159, 64, 1)'
-                            // ],
-                            borderWidth: 2
-                        }]
-                    },
                     options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        },
-                        indexAxis: 'y'
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                align: 'middle'
+                        }}
+                        
                     }
                 });
                 </script>
+            </section>
             </div>
-        </section>
-        
-        <div class="table_div">
-            <h2>Fund Holdings</h2>
-            <table id="fund_data" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Asset Name</th>
-                        <th>Weight</th>
-                        <th>Notional Value</th>
-                        <th>ISIN</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for holding in fund_holdings%}
-                    <tr>
-                        <td>{{ holding[0] }}</td>
-                        <td>{{ holding[1] }}</td>
-                        <td>{{ holding[2] }}</td>
-                        <td>{{ holding[3] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
+        
+        <section class="main__section sector_allocation">
+            <h2>Sector Allocation</h2>
+            <canvas id="sector_allocation_chart"></canvas>
+            <script>
+            let asset_sector_label = JSON.parse({{ a_sector_label | tojson }});
+            let asset_sector_data = JSON.parse({{ a_sector_data | tojson }});
+            const sa_ctx = document.getElementById('sector_allocation_chart').getContext('2d');
+            const sa_chart = new Chart(sa_ctx, {
+                type: 'bar',
+                data: {
+                    labels: asset_sector_label,
+                    datasets: [{
+                        data: asset_sector_data,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        // borderColor: [
+                        //     'rgba(54, 162, 235, 1)',
+                        //     'rgba(255, 99, 132, 1)',
+                        //     'rgba(255, 206, 86, 1)',
+                        //     'rgba(75, 192, 192, 1)',
+                        //     'rgba(153, 102, 255, 1)',
+                        //     'rgba(255, 159, 64, 1)'
+                        // ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    indexAxis: 'y'
+                }
+            });
+            </script>
+        </section>
 
         <section class="main__section">
             <h2>Fund Assets</h2>
@@ -190,6 +197,7 @@
                 </tbody>
             </table>
         </section>
+        
     </main>
 {% endblock %}
 

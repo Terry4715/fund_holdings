@@ -92,6 +92,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return render_template("home.html",
+                           title="Fund Holdings Analysis",
                            fund_assets=fund_assets,
                            fund_holdings=fund_holdings,
                            a_type_label=json.dumps(fund_a_type_label),
