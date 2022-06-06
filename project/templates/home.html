@@ -3,8 +3,8 @@
 {% block content %}
 <div id="loading"></div>
     <main role="main" class="main">
-        
-        <!-- <section class="main__section dfh_table">
+        {% if fund_type == 'Blended' %}
+        <section class="main__section dfh_table">
             <h2>Fund Holdings</h2>
             <table id="fund_data" class="table table-striped">
                 <thead>
@@ -12,7 +12,7 @@
                         <th>Asset Name</th>
                         <th>Weight</th>
                         <th>Notional Value</th>
-                        <th>ISIN</th>
+                        <th>Asset Type</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -26,7 +26,8 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </section> -->
+        </section>
+        {% endif %}
 
         <div class="section__asset_allocation">
             <section class="main__section allocation">
@@ -71,7 +72,7 @@
                                             sum += Number(data);
                                         });
 
-                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        let percentage = (value * 100 / sum).toFixed(1) + '%';
                                         return label + ": " + percentage;
                                     }
                                 }
@@ -126,7 +127,7 @@
                                             sum += Number(data);
                                         });
 
-                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        let percentage = (value * 100 / sum).toFixed(1) + '%';
                                         return label + ": " + percentage;
                                     }
                                 }
@@ -189,7 +190,7 @@
                                             sum += Number(data);
                                         });
 
-                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        let percentage = (value * 100 / sum).toFixed(1) + '%';
                                         return label + ": " + percentage;
                                     }
                                 }
@@ -211,6 +212,7 @@
                         <th>Type</th>
                         <th>Region</th>
                         <th>Sector</th>
+                        <th>Parent Fund</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -222,6 +224,7 @@
                         <td>{{ asset[3] }}</td>
                         <td>{{ asset[4] }}</td>
                         <td>{{ asset[5] }}</td>
+                        <td>{{ asset[6] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -237,8 +240,8 @@
         jQuery('#loading').fadeOut(1000);
     });
     </script>
-
-    <!-- <script>
+    {% if fund_type == 'Blended' %}
+    <script>
         $(document).ready(function () {
             $('#fund_data').DataTable({
                 columns: [
@@ -256,11 +259,12 @@
                         return number;},
                         searchable: false,
                         orderable: false},
-                    {data: 'fund_isin', searchable: false, orderable: false}
+                    {data: 'fund_type', searchable: false, orderable: false}
                 ],
             });
         });
-    </script> -->
+    </script>
+    {% endif %}
 
     <script>
         $(document).ready(function () {
@@ -282,7 +286,8 @@
                         orderable: false},
                     {data: 'type'},
                     {data: 'region'},
-                    {data: 'sector', orderable: false}
+                    {data: 'sector', orderable: false},
+                    {data: 'parent_fund', orderable: false}
                 ],
             });
         });

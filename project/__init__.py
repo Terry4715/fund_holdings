@@ -1,3 +1,4 @@
+#%%
 import os
 from dotenv import load_dotenv
 from .database import Database, CursorFromPool
@@ -19,7 +20,7 @@ Database.initialise(user=db_user,
                     host=db_host,
                     database=db_name)
 
-
+#%%
 app = Flask(__name__)
 
 
@@ -29,11 +30,37 @@ def home():
     # choosing fund, if no FID query parameter provided, default is FID=1
     if request.args:
         FID = request.args['FID']
+        fund_type = request.args['fund_type']
         # default fund id for SQL queries
     else:
         FID = 1
+        fund_type = 'Blended'
 
-    # load asset type allocation using fund_assets view from database
+    if fund_type == 'Blended':
+        # load blended fund holdings from database based on FID
+        with CursorFromPool() as cursor:
+            sql_values = [FID] * 1
+            sql_insert = '''SELECT
+                    assets.asset_name,
+                    fund_holdings.fund_asset_weight AS weight,
+                    ROUND(SUM(fund_holdings.fund_asset_weight *
+                    fund_nav.fund_nav),0) AS notional,
+                    assets.asset_type
+                FROM assets
+                INNER JOIN fund_holdings ON fund_holdings.asset_id
+                = assets.asset_id
+                INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
+                WHERE fund_holdings.fund_id = %s
+                GROUP BY assets.asset_name, weight, assets.asset_type
+                ORDER BY weight DESC;'''
+            cursor.execute(sql_insert, sql_values)
+            # converts sql response from cursor object to a list of tuples
+            fund_holdings = cursor.fetchall()
+    else:
+        # arguement required to prevent error as fund_holdings is rendered
+        fund_holdings = []
+
+    # load asset type allocation using from database
     with CursorFromPool() as cursor:
         sql_values = [FID] * 2
         sql_insert = '''WITH RECURSIVE fund_assets AS (
@@ -81,7 +108,7 @@ def home():
     fund_a_type_label = [data[1] for data in fund_a_type]
     fund_a_type_data = [str(data[0]) for data in fund_a_type]
 
-    # load asset region allocation using fund_assets view from database
+    # load asset region allocation from database
     with CursorFromPool() as cursor:
         sql_values = [FID] * 2
         sql_insert = '''WITH RECURSIVE fund_assets AS (
@@ -129,7 +156,7 @@ def home():
     fund_a_region_label = [data[1] for data in fund_a_region]
     fund_a_region_data = [str(data[0]) for data in fund_a_region]
 
-    # load equity sector allocation using fund_assets view from database
+    # load equity sector allocation from database
     with CursorFromPool() as cursor:
         sql_values = [FID] * 1
         sql_insert = '''WITH RECURSIVE fund_assets AS (
@@ -178,7 +205,7 @@ def home():
     fund_a_sector_label = [data[1] for data in fund_a_sector]
     fund_a_sector_data = [str(data[0]) for data in fund_a_sector]
 
-    # load fund assets from database based in FID
+    # load fund assets from database based on FID
     with CursorFromPool() as cursor:
         sql_values = [FID] * 2
         sql_insert = '''WITH RECURSIVE fund_assets AS (
@@ -189,7 +216,8 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector
+                assets.sector,
+				funds.fund_name
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
@@ -204,7 +232,8 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector
+                assets.sector,
+				funds.fund_name
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
@@ -218,10 +247,11 @@ def home():
             ROUND(SUM(fund_asset_weight * fund_nav),0) AS notional,
             asset_type,
             region,
-            sector
+            sector,
+			fund_name AS parent_fund
         FROM fund_assets
         WHERE asset_type != 'Fund'
-        GROUP BY asset_name, asset_type, region, sector
+        GROUP BY asset_name, asset_type, region, sector, fund_name
         ORDER BY notional DESC;'''
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples
@@ -229,8 +259,10 @@ def home():
 
     return render_template("home.html",
                            title="Fund Holdings Analysis",
+                           FID=FID,
+                           fund_type=fund_type,
                            fund_assets=fund_assets,
-                           #    fund_holdings=fund_holdings,
+                           fund_holdings=fund_holdings,
                            a_type_label=json.dumps(fund_a_type_label),
                            a_type_data=json.dumps(fund_a_type_data),
                            a_region_label=json.dumps(fund_a_region_label),
@@ -244,11 +276,11 @@ def search():
 
     # load list of funds from database
     with CursorFromPool() as cursor:
-        cursor.execute("SELECT fund_id, fund_name FROM funds;")
+        cursor.execute("SELECT fund_id, fund_name, fund_type FROM funds;")
         # converts sql response from cursor object to a list of tuples
         funds = cursor.fetchall()
         # converts list of tuples into dictionary
-        funds = dict(funds)
+        # funds = dict(funds)
 
     return render_template("search.html",
                            title="Fund Search", funds=funds)
@@ -257,3 +289,5 @@ def search():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+# %%
