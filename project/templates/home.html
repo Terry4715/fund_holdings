@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div id="loading"></div>
     <main role="main" class="main">
-        <div class="section__dfh_aa">
-        <section class="main__section dfh_table">
+        
+        <!-- <section class="main__section dfh_table">
             <h2>Fund Holdings</h2>
             <table id="fund_data" class="table table-striped">
                 <thead>
@@ -25,9 +26,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </section>
+        </section> -->
 
-            <div class="section__aa_ra">
+        <div class="section__asset_allocation">
             <section class="main__section allocation">
                 <h2>Asset Allocation</h2>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
@@ -43,30 +44,35 @@
                         datasets: [{
                             data: asset_type_data,
                             backgroundColor: [
-                                'rgba(54, 162, 235, 0.2)',
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(255, 206, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)',
-                                'rgba(153, 102, 255, 0.2)',
-                                'rgba(255, 159, 64, 0.2)'
+                                'rgba(57,59,69, 0.3)',
+                                'rgba(110,120,137, 0.3)',
+                                'rgba(216,217,222, 0.3)',
+                                'rgba(243,181,74, 0.3)',
+                                'rgba(88,180,72, 0.3)',
+                                'rgba(88,80,72, 0.3)',
                             ],
-                            // borderColor: [
-                            //     'rgba(54, 162, 235, 1)',
-                            //     'rgba(255, 99, 132, 1)',
-                            //     'rgba(255, 206, 86, 1)',
-                            //     'rgba(75, 192, 192, 1)',
-                            //     'rgba(153, 102, 255, 1)',
-                            //     'rgba(255, 159, 64, 1)'
-                            // ],
                             borderWidth: 2
                         }]
                     },
                     options: {
                         plugins: {
-                            tooltips: {
+                            tooltip: {
                                 callbacks: {
-                                    label: function(tooltipsItem, data) {
-                                    return data['labels'][tooltipItem['index']] + ': ' + data['datasets'][0]['data'][tooltipItem['index']] + '%';
+                                    label: function(context) {
+                                        let label = context.label;
+                                        let value = context.formattedValue;
+
+                                        if (!label)
+                                            label = 'Unknown'
+
+                                        let sum = 0;
+                                        let dataArr = context.chart.data.datasets[0].data;
+                                        dataArr.map(data => {
+                                            sum += Number(data);
+                                        });
+
+                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        return label + ": " + percentage;
                                     }
                                 }
                             },
@@ -93,82 +99,106 @@
                         datasets: [{
                             data: asset_region_data,
                             backgroundColor: [
-                                'rgba(54, 162, 235, 0.2)',
-                                // 'rgba(38, 50, 56, 0.4)',
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(255, 206, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)',
-                                'rgba(153, 102, 255, 0.2)',
-                                'rgba(255, 159, 64, 0.2)'
+                                'rgba(57,59,69, 0.3)',
+                                'rgba(110,120,137, 0.3)',
+                                'rgba(216,217,222, 0.3)',
+                                'rgba(243,181,74, 0.3)',
+                                'rgba(88,180,72, 0.3)',
+                                'rgba(88,80,72, 0.3)'
                             ],
-                            // borderColor: [
-                            //     'rgba(54, 162, 235, 1)',
-                            //     'rgba(255, 99, 132, 1)',
-                            //     'rgba(255, 206, 86, 1)',
-                            //     'rgba(75, 192, 192, 1)',
-                            //     'rgba(153, 102, 255, 1)',
-                            //     'rgba(255, 159, 64, 1)'
-                            // ],
                             borderWidth: 2
                         }]
                     },
                     options: {
                         plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label;
+                                        let value = context.formattedValue;
+
+                                        if (!label)
+                                            label = 'Unknown'
+
+                                        let sum = 0;
+                                        let dataArr = context.chart.data.datasets[0].data;
+                                        dataArr.map(data => {
+                                            sum += Number(data);
+                                        });
+
+                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        return label + ": " + percentage;
+                                    }
+                                }
+                            },
                             legend: {
                                 position: 'right',
                                 align: 'middle'
                         }}
-                        
                     }
                 });
                 </script>
             </section>
-            </div>
-        </div>
-        
-        <section class="main__section sector_allocation">
-            <h2>Sector Allocation</h2>
-            <canvas id="sector_allocation_chart"></canvas>
-            <script>
-            let asset_sector_label = JSON.parse({{ a_sector_label | tojson }});
-            let asset_sector_data = JSON.parse({{ a_sector_data | tojson }});
-            const sa_ctx = document.getElementById('sector_allocation_chart').getContext('2d');
-            const sa_chart = new Chart(sa_ctx, {
-                type: 'bar',
-                data: {
-                    labels: asset_sector_label,
-                    datasets: [{
-                        data: asset_sector_data,
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)'
-                        ],
-                        // borderColor: [
-                        //     'rgba(54, 162, 235, 1)',
-                        //     'rgba(255, 99, 132, 1)',
-                        //     'rgba(255, 206, 86, 1)',
-                        //     'rgba(75, 192, 192, 1)',
-                        //     'rgba(153, 102, 255, 1)',
-                        //     'rgba(255, 159, 64, 1)'
-                        // ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
+            
+            <section class="main__section sector_allocation">
+                <h2>Sector Allocation</h2>
+                <canvas id="sector_allocation_chart"></canvas>
+                <script>
+                let asset_sector_label = JSON.parse({{ a_sector_label | tojson }});
+                let asset_sector_data = JSON.parse({{ a_sector_data | tojson }});
+                const sa_ctx = document.getElementById('sector_allocation_chart').getContext('2d');
+                const sa_chart = new Chart(sa_ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: asset_sector_label,
+                        datasets: [{
+                            data: asset_sector_data,
+                            backgroundColor: [
+                                'rgba(57,59,69, 0.3)',
+                                'rgba(110,120,137, 0.3)',
+                                'rgba(216,217,222, 0.3)',
+                                'rgba(243,181,74, 0.3)',
+                                'rgba(88,180,72, 0.3)',
+                                'rgba(88,80,72, 0.3)'
+                            ],
+                            borderWidth: 2
+                        }]
                     },
-                    indexAxis: 'y'
-                }
-            });
-            </script>
-        </section>
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false},
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label;
+                                        let value = context.formattedValue;
+
+                                        if (!label)
+                                            label = 'Unknown'
+
+                                        let sum = 0;
+                                        let dataArr = context.chart.data.datasets[0].data;
+                                        dataArr.map(data => {
+                                            sum += Number(data);
+                                        });
+
+                                        let percentage = (value * 100 / sum).toFixed(2) + '%';
+                                        return label + ": " + percentage;
+                                    }
+                                }
+                            }}
+                    }
+                });
+                </script>
+            </section>
+        </div>
 
         <section class="main__section">
             <h2>Fund Assets</h2>
@@ -207,6 +237,31 @@
         jQuery('#loading').fadeOut(1000);
     });
     </script>
+
+    <!-- <script>
+        $(document).ready(function () {
+            $('#fund_data').DataTable({
+                columns: [
+                    {data: 'fund_name'},
+                    {data: 'fund_weight',
+                    render: function (data, type) {
+                        var pct = (data * 100).toFixed(2) + "%";
+                        return pct;},
+                        searchable: false},
+                    {data: 'fund_notional',
+                    render: function (data, type) {
+                        var number = $.fn.dataTable.render
+                            .number(',')
+                            .display(data);
+                        return number;},
+                        searchable: false,
+                        orderable: false},
+                    {data: 'fund_isin', searchable: false, orderable: false}
+                ],
+            });
+        });
+    </script> -->
+
     <script>
         $(document).ready(function () {
             $('#asset_data').DataTable({
@@ -223,7 +278,8 @@
                             .number(',')
                             .display(data);
                         return number;},
-                        searchable: false},
+                        searchable: false,
+                        orderable: false},
                     {data: 'type'},
                     {data: 'region'},
                     {data: 'sector', orderable: false}
