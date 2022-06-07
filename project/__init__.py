@@ -1,4 +1,3 @@
-#%%
 import os
 from dotenv import load_dotenv
 from .database import Database, CursorFromPool
@@ -20,7 +19,7 @@ Database.initialise(user=db_user,
                     host=db_host,
                     database=db_name)
 
-#%%
+
 app = Flask(__name__)
 
 
@@ -41,18 +40,24 @@ def home():
         with CursorFromPool() as cursor:
             sql_values = [FID] * 1
             sql_insert = '''SELECT
-                    assets.asset_name,
-                    fund_holdings.fund_asset_weight AS weight,
-                    ROUND(SUM(fund_holdings.fund_asset_weight *
-                    fund_nav.fund_nav),0) AS notional,
-                    assets.asset_type
-                FROM assets
-                INNER JOIN fund_holdings ON fund_holdings.asset_id
-                = assets.asset_id
-                INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
-                WHERE fund_holdings.fund_id = %s
-                GROUP BY assets.asset_name, weight, assets.asset_type
-                ORDER BY weight DESC;'''
+                                funds.fund_id,
+                                funds.fund_type,
+                                assets.asset_name,
+                                fund_holdings.fund_asset_weight AS weight,
+                                ROUND(SUM(fund_holdings.fund_asset_weight *
+                                fund_nav.fund_nav),0) AS notional,
+                                assets.asset_type
+                            FROM assets
+                            INNER JOIN fund_holdings ON fund_holdings.asset_id
+                            = assets.asset_id
+                            INNER JOIN fund_nav ON fund_nav.fund_id =
+                            fund_holdings.fund_id
+                            LEFT JOIN funds ON assets.asset_isin =
+                            funds.fund_isin
+                            WHERE fund_holdings.fund_id = %s
+                            GROUP BY funds.fund_id, funds.fund_type,
+                                assets.asset_name, weight, assets.asset_type
+                            ORDER BY weight DESC;'''
             cursor.execute(sql_insert, sql_values)
             # converts sql response from cursor object to a list of tuples
             fund_holdings = cursor.fetchall()
@@ -216,8 +221,7 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector,
-				funds.fund_name
+                assets.sector
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
@@ -232,8 +236,7 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector,
-				funds.fund_name
+                assets.sector
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
@@ -247,11 +250,10 @@ def home():
             ROUND(SUM(fund_asset_weight * fund_nav),0) AS notional,
             asset_type,
             region,
-            sector,
-			fund_name AS parent_fund
+            sector
         FROM fund_assets
         WHERE asset_type != 'Fund'
-        GROUP BY asset_name, asset_type, region, sector, fund_name
+        GROUP BY asset_name, asset_type, region, sector
         ORDER BY notional DESC;'''
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples
@@ -289,5 +291,3 @@ def search():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
-
-# %%

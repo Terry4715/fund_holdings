@@ -18,10 +18,14 @@
                 <tbody>
                     {% for holding in fund_holdings%}
                     <tr>
-                        <td>{{ holding[0] }}</td>
-                        <td>{{ holding[1] }}</td>
+                        {% if holding[0] %}
+                        <td><a href={{ url_for('home') }}?FID={{holding[0]}}&fund_type={{holding[1]}}>{{ holding[2] }}</a></td>
+                        {% else %}
                         <td>{{ holding[2] }}</td>
+                        {% endif %}
                         <td>{{ holding[3] }}</td>
+                        <td>{{ holding[4] }}</td>
+                        <td>{{ holding[5] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -212,7 +216,6 @@
                         <th>Type</th>
                         <th>Region</th>
                         <th>Sector</th>
-                        <th>Parent Fund</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -224,7 +227,6 @@
                         <td>{{ asset[3] }}</td>
                         <td>{{ asset[4] }}</td>
                         <td>{{ asset[5] }}</td>
-                        <td>{{ asset[6] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -244,8 +246,10 @@
     <script>
         $(document).ready(function () {
             $('#fund_data').DataTable({
+                searching: false,
+                info: false,
                 columns: [
-                    {data: 'fund_name'},
+                    {data: 'fund_name', searchable: false},
                     {data: 'fund_weight',
                     render: function (data, type) {
                         var pct = (data * 100).toFixed(2) + "%";
@@ -261,6 +265,7 @@
                         orderable: false},
                     {data: 'fund_type', searchable: false, orderable: false}
                 ],
+                order: [[1, 'desc']],
             });
         });
     </script>
@@ -286,9 +291,9 @@
                         orderable: false},
                     {data: 'type'},
                     {data: 'region'},
-                    {data: 'sector', orderable: false},
-                    {data: 'parent_fund', orderable: false}
+                    {data: 'sector', orderable: false}
                 ],
+                order: [[1, 'desc']],
             });
         });
     </script>
