@@ -35,6 +35,22 @@ def home():
         FID = 1
         fund_type = 'Blended'
 
+    # load fund info - name & nav, from database based on FID
+    with CursorFromPool() as cursor:
+        sql_values = [FID] * 1
+        sql_insert = '''SELECT
+                            funds.fund_name,
+                            fund_nav.fund_nav
+                        FROM funds
+                        INNER JOIN fund_nav ON
+                        fund_nav.fund_id = funds.fund_id
+                        WHERE funds.fund_id = %s;'''
+        cursor.execute(sql_insert, sql_values)
+        # creates list from cursor object list of tuples
+        fund_info = cursor.fetchall()
+        fund_name = fund_info[0][0]
+        fund_nav = "£{:,.0f}".format(fund_info[0][1])
+
     if fund_type == 'Blended':
         # load blended fund holdings from database based on FID
         with CursorFromPool() as cursor:
@@ -263,6 +279,8 @@ def home():
                            title="Fund Holdings Analysis",
                            FID=FID,
                            fund_type=fund_type,
+                           fund_name=fund_name,
+                           fund_nav=fund_nav,
                            fund_assets=fund_assets,
                            fund_holdings=fund_holdings,
                            a_type_label=json.dumps(fund_a_type_label),

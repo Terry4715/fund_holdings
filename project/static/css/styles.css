@@ -65,11 +65,35 @@ h2 {
     line-height: 150%;
 }
 
+.section--header {
+    margin-bottom: 1rem;
+}
+
 .section__asset_allocation {
     display: flex;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-between;
     padding: 1rem 0rem;
+}
+
+/* mobile reponsive settings */
+@media (max-width: 88em)  {
+    .section__asset_allocation {
+        flex-direction: column;
+    }
+    .allocation {
+        margin: auto;
+    }
+    .sector_allocation {
+        max-width: 600px;
+        margin: auto;
+    }
+    h2 {
+        text-align: center;
+    }
+    .section--header {
+        text-align: center;
+    }
 }
 
 .main__section {
@@ -78,12 +102,10 @@ h2 {
 
 .allocation {
     width: 380px;
-    /* margin: auto; */
 }
 
 .sector_allocation {
     width: 800px;
-    /* margin: auto; */
 }
 
 /* .dfh_table {
