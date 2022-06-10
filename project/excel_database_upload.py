@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 from database import Database, CursorFromPool
@@ -39,10 +38,11 @@ with CursorFromPool() as cursor:
     funds_table = pd.DataFrame(funds_table, columns=['fund_id',
                                                      'fund_name',
                                                      'fund_isin',
-                                                     'fund_ric'])
+                                                     'fund_ric',
+                                                     'fund_type'])
 
 # creates a subset dataframe from excel_data dataframe
-new_funds = excel_data[['fund_name', 'fund_isin', 'fund_ric']]
+new_funds = excel_data[['fund_name', 'fund_isin', 'fund_ric', 'fund_type']]
 # title case columns referenced in other tables
 new_funds['fund_name'] = new_funds['fund_name'].str.title()
 # drops duplicate records based on 'fund_name' column
@@ -59,7 +59,7 @@ if len(new_funds):
     with CursorFromPool() as cursor:
         sql_values = new_funds
         sql_params = ','.join(['%s'] * len(sql_values))
-        sql_insert = f'''INSERT INTO funds (fund_name, fund_isin, fund_ric)
+        sql_insert = f'''INSERT INTO funds (fund_name, fund_isin, fund_ric, fund_type)
                          VALUES {sql_params};'''
         cursor.execute(sql_insert, sql_values)
 
@@ -89,7 +89,8 @@ with CursorFromPool() as cursor:
     funds_table = pd.DataFrame(funds_table, columns=['fund_id',
                                                      'fund_name',
                                                      'fund_isin',
-                                                     'fund_ric'])
+                                                     'fund_ric',
+                                                     'fund_type'])
 
 # creates a subset dataframe from excel_data dataframe
 new_navs = excel_data[['date', 'fund_name', 'fund_nav']]
@@ -320,3 +321,7 @@ if len(new_aa):
                                                        asset_esg_contro_score)
                          VALUES {sql_params};'''
         cursor.execute(sql_insert, sql_values)
+
+print('''
+         ---Database upload complete---
+      ''')

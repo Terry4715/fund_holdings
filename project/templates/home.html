@@ -7,6 +7,17 @@
             <h2>{{ fund_name }}</h2>
             Net Asset Value: {{ fund_nav }}
         </section>
+
+        <!-- date drop down menu based on what is available in DB -->
+        <div class="dropdown">
+            <button onclick="myFunction()" class="dropbtn">{{ddates[0][0]}}</button>
+            <div id="myDropdown" class="dropdown-content">
+                {% for q_date, date in ddates[1:]%}
+                <a href="{{ url_for('home') }}?FID={{FID}}&fund_type={{fund_type}}&date={{date}}">{{q_date}}</a>
+                {% endfor %}
+            </div>
+          </div>
+
         {% if fund_type == 'Blended' %}
         <section class="main__section dfh_table">
             <h2>Fund Holdings</h2>

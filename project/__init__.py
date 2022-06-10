@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from .database import Database, CursorFromPool
 from flask import Flask, render_template, request
 import json
+import datetime
+from math import ceil
 
 
 # loading environment variables used to hide database credentials
@@ -35,26 +37,54 @@ def home():
         FID = 1
         fund_type = 'Blended'
 
-    # load fund info - name & nav, from database based on FID
+    # load available fund holdings dates from database based on FID
     with CursorFromPool() as cursor:
         sql_values = [FID] * 1
+        sql_insert = '''SELECT DISTINCT fund_holding_date
+                        FROM fund_holdings
+                        WHERE fund_id = %s
+                        ORDER BY fund_holding_date DESC;'''
+        cursor.execute(sql_insert, sql_values)
+        # converts sql response from cursor object to a list of tuples
+        sql_dates = cursor.fetchall()
+
+    # creates a list of tuples with formatted dates
+    ddates = []
+    for date in sql_dates:
+        ddates.append((f"Q{ceil(date[0].month/3)} {date[0].year}",
+                      str(date[0])))
+
+    # creates a default fund holdings date for SQL queries
+    if request.args.get('date'):
+        holdings_date = datetime.date.fromisoformat(request.args['date'])
+    else:
+        holdings_date = datetime.date.fromisoformat(ddates[0][1])
+
+    # load fund info - name & nav, from database based on FID
+    with CursorFromPool() as cursor:
+        sql_values = [FID, holdings_date]
         sql_insert = '''SELECT
                             funds.fund_name,
                             fund_nav.fund_nav
                         FROM funds
                         INNER JOIN fund_nav ON
                         fund_nav.fund_id = funds.fund_id
-                        WHERE funds.fund_id = %s;'''
+                        WHERE funds.fund_id = %s AND fund_nav_date = %s;'''
         cursor.execute(sql_insert, sql_values)
-        # creates list from cursor object list of tuples
+        # converts sql response from cursor object to a list of tuples
         fund_info = cursor.fetchall()
-        fund_name = fund_info[0][0]
-        fund_nav = "£{:,.0f}".format(fund_info[0][1])
+        # error handling - build URL redirect function for better UX
+        if fund_info:
+            fund_name = fund_info[0][0]
+            fund_nav = "£{:,.0f}".format(fund_info[0][1])
+        else:
+            fund_name = "No available data"
+            fund_nav = "£-"
 
     if fund_type == 'Blended':
         # load blended fund holdings from database based on FID
         with CursorFromPool() as cursor:
-            sql_values = [FID] * 1
+            sql_values = [FID, holdings_date, holdings_date]
             sql_insert = '''SELECT
                                 funds.fund_id,
                                 funds.fund_type,
@@ -71,6 +101,8 @@ def home():
                             LEFT JOIN funds ON assets.asset_isin =
                             funds.fund_isin
                             WHERE fund_holdings.fund_id = %s
+                                  AND fund_holding_date = %s
+                                  AND fund_nav.fund_nav_date = %s
                             GROUP BY funds.fund_id, funds.fund_type,
                                 assets.asset_name, weight, assets.asset_type
                             ORDER BY weight DESC;'''
@@ -83,7 +115,7 @@ def home():
 
     # load asset type allocation using from database
     with CursorFromPool() as cursor:
-        sql_values = [FID] * 2
+        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -98,7 +130,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            WHERE fund_holdings.fund_id = %s
+            WHERE fund_holdings.fund_id = %s AND
+                  fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s
             UNION ALL
             SELECT
                 assets.asset_name,
@@ -116,7 +150,8 @@ def home():
             INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
         SELECT
             ROUND(SUM(fund_asset_weight * fund_nav) /
-            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s),4) AS weight,
+            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s
+                    AND fund_nav_date = %s),4) AS weight,
             asset_type
         FROM fund_assets
         WHERE asset_type != 'Fund'
@@ -131,7 +166,7 @@ def home():
 
     # load asset region allocation from database
     with CursorFromPool() as cursor:
-        sql_values = [FID] * 2
+        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -146,7 +181,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            WHERE fund_holdings.fund_id = %s
+            WHERE fund_holdings.fund_id = %s AND
+                  fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s
             UNION ALL
             SELECT
                 assets.asset_name,
@@ -164,7 +201,8 @@ def home():
             INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
         SELECT
             ROUND(SUM(fund_asset_weight * fund_nav) /
-            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s),4) AS weight,
+            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s
+                    AND fund_nav_date = %s),4) AS weight,
             region
         FROM fund_assets
         WHERE asset_type != 'Fund'
@@ -179,7 +217,7 @@ def home():
 
     # load equity sector allocation from database
     with CursorFromPool() as cursor:
-        sql_values = [FID] * 1
+        sql_values = [FID, holdings_date, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -194,7 +232,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            WHERE fund_holdings.fund_id = %s
+            WHERE fund_holdings.fund_id = %s AND
+                  fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s
             UNION ALL
             SELECT
                 assets.asset_name,
@@ -228,7 +268,7 @@ def home():
 
     # load fund assets from database based on FID
     with CursorFromPool() as cursor:
-        sql_values = [FID] * 2
+        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -243,7 +283,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            WHERE fund_holdings.fund_id = %s
+            WHERE fund_holdings.fund_id = %s AND
+                  fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s
             UNION ALL
             SELECT
                 assets.asset_name,
@@ -262,7 +304,8 @@ def home():
         SELECT
             asset_name,
             ROUND(SUM(fund_asset_weight * fund_nav) /
-            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s),4) AS weight,
+            (SELECT fund_nav FROM fund_nav WHERE fund_id = %s
+                    AND fund_nav_date = %s),4) AS weight,
             ROUND(SUM(fund_asset_weight * fund_nav),0) AS notional,
             asset_type,
             region,
@@ -281,6 +324,7 @@ def home():
                            fund_type=fund_type,
                            fund_name=fund_name,
                            fund_nav=fund_nav,
+                           ddates=ddates,
                            fund_assets=fund_assets,
                            fund_holdings=fund_holdings,
                            a_type_label=json.dumps(fund_a_type_label),
