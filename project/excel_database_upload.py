@@ -14,7 +14,7 @@ db_name = os.getenv("DB_NAME")
 # "../other_files/"
 # reads data from excel and creates dataframe
 file_path = "C:\\Users\\asusr\\Documents\\Python\\SMA Project\\other_files\\"
-file_name = "db_design.xlsx"
+file_name = "upload_template.xlsx"
 
 excel_data = pd.read_excel(f"{file_path}{file_name}",
                            sheet_name="upload_template",
@@ -37,12 +37,12 @@ with CursorFromPool() as cursor:
     # converts list of tuples into dataframe
     funds_table = pd.DataFrame(funds_table, columns=['fund_id',
                                                      'fund_name',
-                                                     'fund_isin',
                                                      'fund_ric',
+                                                     'fund_isin',
                                                      'fund_type'])
 
 # creates a subset dataframe from excel_data dataframe
-new_funds = excel_data[['fund_name', 'fund_isin', 'fund_ric', 'fund_type']]
+new_funds = excel_data[['fund_name', 'fund_ric', 'fund_isin', 'fund_type']]
 # title case columns referenced in other tables
 new_funds['fund_name'] = new_funds['fund_name'].str.title()
 # drops duplicate records based on 'fund_name' column
@@ -59,7 +59,7 @@ if len(new_funds):
     with CursorFromPool() as cursor:
         sql_values = new_funds
         sql_params = ','.join(['%s'] * len(sql_values))
-        sql_insert = f'''INSERT INTO funds (fund_name, fund_isin, fund_ric, fund_type)
+        sql_insert = f'''INSERT INTO funds (fund_name, fund_ric, fund_isin, fund_type)
                          VALUES {sql_params};'''
         cursor.execute(sql_insert, sql_values)
 
@@ -88,8 +88,8 @@ with CursorFromPool() as cursor:
     # converts list of tuples into dataframe
     funds_table = pd.DataFrame(funds_table, columns=['fund_id',
                                                      'fund_name',
-                                                     'fund_isin',
                                                      'fund_ric',
+                                                     'fund_isin',
                                                      'fund_type'])
 
 # creates a subset dataframe from excel_data dataframe

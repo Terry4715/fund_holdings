@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from .database import Database, CursorFromPool
+from database import Database, CursorFromPool
 
 # loading environment variables used to hide database credentials
 load_dotenv()

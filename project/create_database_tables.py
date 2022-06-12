@@ -21,8 +21,8 @@ with CursorFromPool() as cursor:
     cursor.execute('''CREATE TABLE IF NOT EXISTS funds (
                         fund_id	BIGSERIAL NOT NULL PRIMARY KEY,
                         fund_name VARCHAR(250) NOT NULL,
-                        fund_isin CHAR(12),
                         fund_ric VARCHAR(32),
+                        fund_isin CHAR(12)  NOT NULL,
                         fund_type VARCHAR(12) NOT NULL
                         )''')
 
