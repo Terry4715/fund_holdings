@@ -40,10 +40,12 @@ with CursorFromPool() as cursor:
     UPDATE region SET region = 'Rest of World' WHERE country = 'Israel';
     UPDATE region SET region = 'European' WHERE country = 'Italy';
     UPDATE region SET region = 'Asia Pacific' WHERE country = 'Japan';
+    UPDATE region SET region = 'European' WHERE country = 'Jersey';
     UPDATE region SET region = 'Asia Pacific' WHERE country = 'Korea';
     UPDATE region SET region = 'Rest of World' WHERE country = 'Luxembourg';
     UPDATE region SET region = 'Rest of World' WHERE country = 'Mexico';
     UPDATE region SET region = 'European' WHERE country = 'Netherlands';
+    UPDATE region SET region = 'European' WHERE country = 'Norway';
     UPDATE region SET region = 'Rest of World' WHERE country = 'Panama';
     UPDATE region SET region = 'European' WHERE country = 'Poland';
     UPDATE region SET region = 'Russian' WHERE country = 'Russian Federation';
@@ -52,6 +54,7 @@ with CursorFromPool() as cursor:
     UPDATE region SET region = 'European' WHERE country = 'Sweden';
     UPDATE region SET region = 'European' WHERE country = 'Switzerland';
     UPDATE region SET region = 'Asia Pacific' WHERE country = 'Taiwan';
+    UPDATE region SET region = 'European' WHERE country = 'Turkey';
     UPDATE region SET region = 'UK' WHERE country = 'United Kingdom';
     UPDATE region SET region = 'North American' WHERE country ='United States';
         ''')

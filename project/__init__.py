@@ -54,11 +54,17 @@ def home():
         ddates.append((f"Q{ceil(date[0].month/3)} {date[0].year}",
                       str(date[0])))
 
+    display_date = 'QX 20XX'
+
     # creates a default fund holdings date for SQL queries
     if request.args.get('date'):
         holdings_date = datetime.date.fromisoformat(request.args['date'])
+        for d in ddates:
+            if request.args['date'] in d:
+                display_date = d[0]
     else:
         holdings_date = datetime.date.fromisoformat(ddates[0][1])
+        display_date = ddates[0][0]
 
     # load fund info - name & nav, from database based on FID
     with CursorFromPool() as cursor:
@@ -115,7 +121,8 @@ def home():
 
     # load asset type allocation using from database
     with CursorFromPool() as cursor:
-        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
+        sql_values = [FID, holdings_date, holdings_date,
+                      holdings_date, holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -147,7 +154,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
+            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin
+            WHERE fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s)
         SELECT
             ROUND(SUM(fund_asset_weight * fund_nav) /
             (SELECT fund_nav FROM fund_nav WHERE fund_id = %s
@@ -166,7 +175,8 @@ def home():
 
     # load asset region allocation from database
     with CursorFromPool() as cursor:
-        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
+        sql_values = [FID, holdings_date, holdings_date,
+                      holdings_date, holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -198,7 +208,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
+            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin
+            WHERE fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s)
         SELECT
             ROUND(SUM(fund_asset_weight * fund_nav) /
             (SELECT fund_nav FROM fund_nav WHERE fund_id = %s
@@ -217,7 +229,8 @@ def home():
 
     # load equity sector allocation from database
     with CursorFromPool() as cursor:
-        sql_values = [FID, holdings_date, holdings_date]
+        sql_values = [FID, holdings_date, holdings_date,
+                      holdings_date, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -249,7 +262,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
+            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin
+            WHERE fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s)
         SELECT
             SUM(ROUND((fund_asset_weight * fund_nav) /
                   (SELECT SUM(fund_asset_weight * fund_nav)
@@ -268,7 +283,8 @@ def home():
 
     # load fund assets from database based on FID
     with CursorFromPool() as cursor:
-        sql_values = [FID, holdings_date, holdings_date, FID, holdings_date]
+        sql_values = [FID, holdings_date, holdings_date, holdings_date,
+                      holdings_date, FID, holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -300,7 +316,9 @@ def home():
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
-            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin)
+            INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin
+            WHERE fund_holdings.fund_holding_date = %s AND
+                  fund_nav.fund_nav_date = %s)
         SELECT
             asset_name,
             ROUND(SUM(fund_asset_weight * fund_nav) /
@@ -324,6 +342,7 @@ def home():
                            fund_type=fund_type,
                            fund_name=fund_name,
                            fund_nav=fund_nav,
+                           display_date=display_date,
                            ddates=ddates,
                            fund_assets=fund_assets,
                            fund_holdings=fund_holdings,

@@ -9,10 +9,10 @@
         </section>
 
         <!-- date drop down menu based on what is available in DB -->
-        <div class="dropdown">
-            <button onclick="myFunction()" class="dropbtn">{{ddates[0][0]}}</button>
-            <div id="myDropdown" class="dropdown-content">
-                {% for q_date, date in ddates[1:]%}
+        <div class="ddropdown">
+            <button onclick="myFunction()" class="dropbtn">{{display_date}}</button>
+            <div id="myDropdown" class="ddropdown-content">
+                {% for q_date, date in ddates%}
                 <a href="{{ url_for('home') }}?FID={{FID}}&fund_type={{fund_type}}&date={{date}}">{{q_date}}</a>
                 {% endfor %}
             </div>
@@ -314,5 +314,25 @@
                 order: [[1, 'desc']],
             });
         });
+    </script>
+    <script>
+        //toggle between hiding and showing the dropdown content
+        function myFunction() {
+        document.getElementById("myDropdown").classList.toggle("show");
+        }
+
+        // Close the dropdown menu if the user clicks outside of it
+        window.onclick = function(event) {
+        if (!event.target.matches('.dropbtn')) {
+            var dropdowns = document.getElementsByClassName("ddropdown-content");
+            var i;
+            for (i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+            }
+        }
+        }
     </script>
 {% endblock %}

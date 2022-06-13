@@ -115,7 +115,47 @@ h2 {
 
 
 
-
+/* Dropdown Button */
+.dropbtn {
+    background-color: #ddd;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .dropbtn:hover, .dropbtn:focus {
+    background-color: rgba(110,120,137, 0.3);
+    font-weight: bold;
+  }
+  
+  /* The container <div> - needed to position the dropdown content */
+  .ddropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .ddropdown-content {
+    display: none;
+    background-color: #f6f6f6;
+    border: 1px solid #ddd;
+    position: absolute;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    overflow: auto;
+    z-index: 1;
+  }
+  
+  .ddropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+  
+  .ddropdown-content a:hover {background-color: #ddd}
+  
+   
 #myInput {
     box-sizing: border-box;
     background-image: url('searchicon.png');
@@ -151,4 +191,5 @@ h2 {
   
   .dropdown a:hover {background-color: #ddd;}
   
+   /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
   .show {display: block;}
