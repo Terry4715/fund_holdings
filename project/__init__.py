@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from .database import Database, CursorFromPool
+from database import Database, CursorFromPool
 from flask import Flask, render_template, request
 import json
 import datetime
