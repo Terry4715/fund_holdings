@@ -10,7 +10,7 @@ class Database:
     @staticmethod
     def initialise(**kwargs):
         Database.__connection_pool = pool.SimpleConnectionPool(minconn=1,
-                                                               maxconn=8,
+                                                               maxconn=18,
                                                                **kwargs)
 
     # gets a connection from the pool of connections created when initialising

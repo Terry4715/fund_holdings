@@ -79,6 +79,7 @@ def home():
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples
         fund_info = cursor.fetchall()
+
         # error handling - build URL redirect function for better UX
         if fund_info:
             fund_name = fund_info[0][0]
@@ -372,3 +373,5 @@ def search():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+# %%

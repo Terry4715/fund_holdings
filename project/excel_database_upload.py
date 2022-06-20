@@ -273,7 +273,12 @@ with CursorFromPool() as cursor:
                                                    'asset_id',
                                                    'asset_attribute_date',
                                                    'asset_esg_score',
-                                                   'asset_esg_contro_score'])
+                                                   'asset_e_score',
+                                                   'asset_s_score',
+                                                   'asset_g_score',
+                                                   'asset_total_co2',
+                                                   'asset_co2_scope1',
+                                                   'asset_co2_scope2'])
     # formats dataframe columns from 'object' to 'date' and 'float'
     asset_attributes_table['asset_attribute_date'] = (pd.to_datetime(
                                                      asset_attributes_table
@@ -281,24 +286,40 @@ with CursorFromPool() as cursor:
     asset_attributes_table['asset_esg_score'] = (pd.to_numeric(
                                                  asset_attributes_table
                                                  ['asset_esg_score']))
-    asset_attributes_table['asset_esg_contro_score'] = (pd.to_numeric(
+    asset_attributes_table['asset_e_score'] = (pd.to_numeric(
                                                  asset_attributes_table
-                                                 ['asset_esg_contro_score']))
+                                                 ['asset_e_score']))
+    asset_attributes_table['asset_s_score'] = (pd.to_numeric(
+                                                 asset_attributes_table
+                                                 ['asset_s_score']))
+    asset_attributes_table['asset_g_score'] = (pd.to_numeric(
+                                                 asset_attributes_table
+                                                 ['asset_g_score']))
+    asset_attributes_table['asset_total_co2'] = (pd.to_numeric(
+                                                 asset_attributes_table
+                                                 ['asset_total_co2']))
+    asset_attributes_table['asset_co2_scope1'] = (pd.to_numeric(
+                                                 asset_attributes_table
+                                                 ['asset_co2_scope1']))
+    asset_attributes_table['asset_co2_scope2'] = (pd.to_numeric(
+                                                 asset_attributes_table
+                                                 ['asset_co2_scope2']))
 
 # updated 'assets' table already loaded from database - 'asset_id' foreign key
 
 # creates a subset dataframe from excel_data dataframe
-new_aa = excel_data[['asset_name', 'date', 'asset_esg_score',
-                     'asset_esg_contro_score']]
+new_aa = excel_data[['asset_name', 'date', 'asset_esg_score', 'asset_e_score',
+                     'asset_s_score', 'asset_g_score', 'asset_total_co2',
+                     'asset_co2_scope1', 'asset_co2_scope2']]
 # title case columns referenced in other tables
 new_aa['asset_name'] = new_aa['asset_name'].str.title()
 # drops duplicate records based on 'asset_name' column
 new_aa = new_aa.drop_duplicates(subset=['asset_name'])
 # adds 'asset_id' by merging with 'assets' table, case insensitive 'asset_name'
 new_aa = (pd.merge(assets_table['asset_id'],
-                   new_aa[['date',
-                           'asset_esg_score',
-                           'asset_esg_contro_score']],
+                   new_aa[['date', 'asset_esg_score', 'asset_e_score',
+                           'asset_s_score', 'asset_g_score', 'asset_total_co2',
+                           'asset_co2_scope1', 'asset_co2_scope2']],
                    left_on=assets_table['asset_name'].str.lower(),
                    right_on=new_aa['asset_name'].str.lower(),
                    how='right')).iloc[:, 1:]  # drop column created by merge
@@ -318,7 +339,12 @@ if len(new_aa):
         sql_insert = f'''INSERT INTO asset_attributes (asset_id,
                                                        asset_attribute_date,
                                                        asset_esg_score,
-                                                       asset_esg_contro_score)
+                                                       asset_e_score,
+                                                       asset_s_score,
+                                                       asset_g_score,
+                                                       asset_total_co2,
+                                                       asset_co2_scope1,
+                                                       asset_co2_scope2)
                          VALUES {sql_params};'''
         cursor.execute(sql_insert, sql_values)
 

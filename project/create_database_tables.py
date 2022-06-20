@@ -75,7 +75,12 @@ with CursorFromPool() as cursor:
                         asset_id BIGINT	NOT NULL,
                         asset_attribute_date DATE NOT NULL,
                         asset_esg_score DECIMAL(5,2),
-                        asset_esg_contro_score DECIMAL(5,2),
+                        asset_e_score DECIMAL(5,2),
+                        asset_s_score DECIMAL(5,2),
+                        asset_g_score DECIMAL(5,2),
+                        asset_total_co2 DOUBLE PRECISION,
+                        asset_co2_scope1 DOUBLE PRECISION,
+                        asset_co2_scope2 DOUBLE PRECISION,
                         FOREIGN KEY(asset_id) REFERENCES assets(asset_id)
                         )''')
 
