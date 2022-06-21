@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from database import Database, CursorFromPool
+from .database import Database, CursorFromPool
 from flask import Flask, render_template, request
 import json
 import datetime
@@ -285,7 +285,8 @@ def home():
     # load fund assets from database based on FID
     with CursorFromPool() as cursor:
         sql_values = [FID, holdings_date, holdings_date, holdings_date,
-                      holdings_date, FID, holdings_date]
+                      holdings_date, holdings_date, holdings_date, FID,
+                      holdings_date]
         sql_insert = '''WITH RECURSIVE fund_assets AS (
             SELECT
                 assets.asset_name,
@@ -294,15 +295,22 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector
+                assets.sector,
+                asset_attributes.asset_esg_score,
+                asset_attributes.asset_total_co2,
+                asset_attributes.asset_co2_scope1,
+                asset_attributes.asset_co2_scope2
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
+            INNER JOIN asset_attributes ON asset_attributes.asset_id
+                       = assets.asset_id
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
             WHERE fund_holdings.fund_id = %s AND
                   fund_holdings.fund_holding_date = %s AND
-                  fund_nav.fund_nav_date = %s
+                  fund_nav.fund_nav_date = %s AND
+                  asset_attributes.asset_attribute_date = %s
             UNION ALL
             SELECT
                 assets.asset_name,
@@ -311,15 +319,22 @@ def home():
                 fund_nav.fund_nav,
                 assets.asset_type,
                 region.region,
-                assets.sector
+                assets.sector,
+                asset_attributes.asset_esg_score,
+                asset_attributes.asset_total_co2,
+                asset_attributes.asset_co2_scope1,
+                asset_attributes.asset_co2_scope2
             FROM assets
             INNER JOIN fund_holdings ON fund_holdings.asset_id=assets.asset_id
             INNER JOIN fund_nav ON fund_nav.fund_id = fund_holdings.fund_id
             INNER JOIN region ON region.country = assets.country
+            INNER JOIN asset_attributes ON asset_attributes.asset_id
+                       = assets.asset_id
             INNER JOIN funds ON funds.fund_id = fund_holdings.fund_id
             INNER JOIN fund_assets ON fund_assets.asset_isin = funds.fund_isin
             WHERE fund_holdings.fund_holding_date = %s AND
-                  fund_nav.fund_nav_date = %s)
+                  fund_nav.fund_nav_date = %s AND
+                  asset_attributes.asset_attribute_date = %s)
         SELECT
             asset_name,
             ROUND(SUM(fund_asset_weight * fund_nav) /
@@ -328,10 +343,15 @@ def home():
             ROUND(SUM(fund_asset_weight * fund_nav),0) AS notional,
             asset_type,
             region,
-            sector
+            sector,
+            asset_esg_score,
+            asset_total_co2,
+            asset_co2_scope1,
+            asset_co2_scope2
         FROM fund_assets
         WHERE asset_type != 'Fund'
-        GROUP BY asset_name, asset_type, region, sector
+        GROUP BY asset_name, asset_type, region, sector, asset_esg_score,
+                 asset_total_co2, asset_co2_scope1, asset_co2_scope2
         ORDER BY notional DESC;'''
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples

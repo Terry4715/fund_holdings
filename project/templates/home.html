@@ -231,6 +231,10 @@
                         <th>Type</th>
                         <th>Region</th>
                         <th>Sector</th>
+                        <th>ESG Score</th>
+                        <th>CO2 Emmisions</th>
+                        <th>CO2 Scope1</th>
+                        <th>CO2 Scope2</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -242,6 +246,10 @@
                         <td>{{ asset[3] }}</td>
                         <td>{{ asset[4] }}</td>
                         <td>{{ asset[5] }}</td>
+                        <td>{{ asset[6] }}</td>
+                        <td>{{ asset[7] }}</td>
+                        <td>{{ asset[8] }}</td>
+                        <td>{{ asset[9] }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -294,11 +302,13 @@
                 buttons: ['copy', 'csv', 'excel', 'pdf'],
                 columns: [
                     {data: 'name'},
+
                     {data: 'weight',
                     render: function (data, type) {
                         var pct = (data * 100).toFixed(2) + "%";
                         return pct;},
                         searchable: false},
+
                     {data: 'notional',
                     render: function (data, type) {
                         var number = $.fn.dataTable.render
@@ -307,9 +317,55 @@
                         return number;},
                         searchable: false,
                         orderable: false},
+
                     {data: 'type'},
+
                     {data: 'region'},
-                    {data: 'sector', orderable: false}
+
+                    {data: 'sector',
+                        orderable: false},
+
+                    {data: 'esg_score',
+                    render: function (data, type) {
+                        if(isNaN(data))
+                            {var f_num = ""}
+                        else
+                            {var f_num = +(data)}
+                            return f_num;},
+                        searchable: false},
+
+                    {data: 'total_co2',
+                    render: function (data, type) {
+                        if(isNaN(data))
+                            {var number = ""}
+                        else
+                        {var number = $.fn.dataTable.render
+                            .number(',')
+                            .display(data)}
+                        return number;},
+                        searchable: false},
+
+                    {data: 'co2_scope1',
+                    render: function (data, type) {
+                        if(isNaN(data))
+                            {var number = ""}
+                        else
+                        {var number = $.fn.dataTable.render
+                            .number(',')
+                            .display(data)}
+                        return number;},
+                        searchable: false},
+                        
+                    {data: 'co2_scope2',
+                    render: function (data, type) {
+                        if(isNaN(data))
+                            {var number = ""}
+                        else
+                        {var number = $.fn.dataTable.render
+                            .number(',')
+                            .display(data)}
+                        return number;},
+                        searchable: false}
                 ],
                 order: [[1, 'desc']],
             });
