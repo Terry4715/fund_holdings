@@ -15,14 +15,13 @@ db_password = os.getenv("DB_PASSWORD")
 db_host = os.getenv("DB_HOST")
 db_name = os.getenv("DB_NAME")
 
+app = Flask(__name__)
+
 # login to the database
 Database.initialise(user=db_user,
                     password=db_password,
                     host=db_host,
                     database=db_name)
-
-
-app = Flask(__name__)
 
 
 @app.route("/")
@@ -394,4 +393,6 @@ def search():
 def page_not_found(error):
     return render_template("404.html"), 404
 
-# %%
+
+if __name__ == "__main__":
+    app.run()
