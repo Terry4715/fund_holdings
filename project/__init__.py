@@ -366,6 +366,9 @@ def home():
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples
         fund_assets = cursor.fetchall()
+    
+    
+    Database.close_all_connections()
 
     return render_template("home.html",
                            title="Fund Holdings Analysis",
@@ -407,6 +410,3 @@ def page_not_found(error):
 
 if __name__ == "__main__":
     app.run()
-
-
-Database.close_all_connections()
