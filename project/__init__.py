@@ -1,5 +1,4 @@
 import os
-from typing import final
 from dotenv import load_dotenv
 from database import Database, CursorFromPool
 from flask import Flask, render_template, request
