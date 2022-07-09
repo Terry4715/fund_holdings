@@ -13,7 +13,8 @@ db_name = os.getenv("DB_NAME")
 
 # "../other_files/"
 # reads data from excel and creates dataframe
-file_path = "C:\\Users\\asusr\\Documents\\Python\\SMA Project\\other_files\\"
+
+file_path = "C:\\Users\\asusr\\python\\fund_holdings\\other_files\\"
 file_name = "upload_template.xlsx"
 
 excel_data = pd.read_excel(f"{file_path}{file_name}",
