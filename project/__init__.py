@@ -1,11 +1,11 @@
 import os
+from typing import final
 from dotenv import load_dotenv
 from database import Database, CursorFromPool
 from flask import Flask, render_template, request
 import json
 import datetime
 from math import ceil
-
 
 # loading environment variables used to hide database credentials
 load_dotenv()
@@ -17,16 +17,22 @@ db_name = os.getenv("DB_NAME")
 
 app = Flask(__name__)
 
+keepalive_kwargs = {
+  "keepalives": 1,
+  "keepalives_idle": 1,
+  "keepalives_interval": 1,
+  "keepalives_count": 3
+}
+
 # login to the database
 Database.initialise(user=db_user,
                     password=db_password,
                     host=db_host,
-                    database=db_name)
+                    database=db_name, **keepalive_kwargs)
 
 
 @app.route("/")
 def home():
-
     # choosing fund, if no FID query parameter provided, default is FID=1
     if request.args:
         FID = request.args['FID']
@@ -36,27 +42,30 @@ def home():
         FID = 1
         fund_type = 'Blended'
 
-    # load available fund holdings dates from database based on FID
-    with CursorFromPool() as cursor:
-        sql_values = [FID] * 1
-        sql_insert = '''SELECT DISTINCT fund_holding_date
-                        FROM fund_holdings
-                        WHERE fund_id = %s
-                        ORDER BY fund_holding_date DESC;'''
-        cursor.execute(sql_insert, sql_values)
-        # converts sql response from cursor object to a list of tuples
-        sql_dates = cursor.fetchall()
-
-    # load available fund holdings dates from database based on FID
-    with CursorFromPool() as cursor:
-        sql_values = [FID] * 1
-        sql_insert = '''SELECT DISTINCT fund_holding_date
-                        FROM fund_holdings
-                        WHERE fund_id = %s
-                        ORDER BY fund_holding_date DESC;'''
-        cursor.execute(sql_insert, sql_values)
-        # converts sql response from cursor object to a list of tuples
-        sql_dates = cursor.fetchall()
+    try:
+        # load available fund holdings dates from database based on FID
+        with CursorFromPool() as cursor:
+            sql_values = [FID] * 1
+            sql_insert = '''SELECT DISTINCT fund_holding_date
+                            FROM fund_holdings
+                            WHERE fund_id = %s
+                            ORDER BY fund_holding_date DESC;'''
+            cursor.execute(sql_insert, sql_values)
+            # converts sql response from cursor object to a list of tuples
+            sql_dates = cursor.fetchall()
+    except EOFError:
+        print("Connection issue with the database... trying again")
+    finally:
+        # load available fund holdings dates from database based on FID
+        with CursorFromPool() as cursor:
+            sql_values = [FID] * 1
+            sql_insert = '''SELECT DISTINCT fund_holding_date
+                            FROM fund_holdings
+                            WHERE fund_id = %s
+                            ORDER BY fund_holding_date DESC;'''
+            cursor.execute(sql_insert, sql_values)
+            # converts sql response from cursor object to a list of tuples
+            sql_dates = cursor.fetchall()
 
     # creates a list of tuples with formatted dates
     ddates = []
@@ -366,9 +375,6 @@ def home():
         cursor.execute(sql_insert, sql_values)
         # converts sql response from cursor object to a list of tuples
         fund_assets = cursor.fetchall()
-    
-    
-    Database.close_all_connections()
 
     return render_template("home.html",
                            title="Fund Holdings Analysis",
@@ -390,7 +396,6 @@ def home():
 
 @app.route("/search")
 def search():
-
     # load list of funds from database
     with CursorFromPool() as cursor:
         cursor.execute("SELECT fund_id, fund_name, fund_type FROM funds;")
@@ -406,6 +411,13 @@ def search():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+def server_error(error):
+    # closes any connections to the database that may have been left open
+    Database.close_all_connections()
+    return render_template("500.html"), 500
 
 
 if __name__ == "__main__":
