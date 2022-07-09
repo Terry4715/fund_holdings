@@ -36,30 +36,27 @@ def home():
         FID = 1
         fund_type = 'Blended'
 
-    try:
-        # load available fund holdings dates from database based on FID
-        with CursorFromPool() as cursor:
-            sql_values = [FID] * 1
-            sql_insert = '''SELECT DISTINCT fund_holding_date
-                            FROM fund_holdings
-                            WHERE fund_id = %s
-                            ORDER BY fund_holding_date DESC;'''
-            cursor.execute(sql_insert, sql_values)
-            # converts sql response from cursor object to a list of tuples
-            sql_dates = cursor.fetchall()
-    except OperationalError as e:
-        print(e)
-    else:
-        # load available fund holdings dates from database based on FID
-        with CursorFromPool() as cursor:
-            sql_values = [FID] * 1
-            sql_insert = '''SELECT DISTINCT fund_holding_date
-                            FROM fund_holdings
-                            WHERE fund_id = %s
-                            ORDER BY fund_holding_date DESC;'''
-            cursor.execute(sql_insert, sql_values)
-            # converts sql response from cursor object to a list of tuples
-            sql_dates = cursor.fetchall()
+    # load available fund holdings dates from database based on FID
+    with CursorFromPool() as cursor:
+        sql_values = [FID] * 1
+        sql_insert = '''SELECT DISTINCT fund_holding_date
+                        FROM fund_holdings
+                        WHERE fund_id = %s
+                        ORDER BY fund_holding_date DESC;'''
+        cursor.execute(sql_insert, sql_values)
+        # converts sql response from cursor object to a list of tuples
+        sql_dates = cursor.fetchall()
+
+    # load available fund holdings dates from database based on FID
+    with CursorFromPool() as cursor:
+        sql_values = [FID] * 1
+        sql_insert = '''SELECT DISTINCT fund_holding_date
+                        FROM fund_holdings
+                        WHERE fund_id = %s
+                        ORDER BY fund_holding_date DESC;'''
+        cursor.execute(sql_insert, sql_values)
+        # converts sql response from cursor object to a list of tuples
+        sql_dates = cursor.fetchall()
 
     # creates a list of tuples with formatted dates
     ddates = []
@@ -411,4 +408,5 @@ def page_not_found(error):
 if __name__ == "__main__":
     app.run()
 
-#%%
+
+Database.close_all_connections()
