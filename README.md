@@ -4,7 +4,7 @@ This project was designed to create a simple look through of assets for investme
 
 The application looks at all of the underlying fund assets and rolls up their value to present the overall exposures. It also makes it very easy to search for specific assets and understand their contribution to data points such as CO2 emissions.
 
-An example of this application is hosted on render which can be found here: https://fund-holdings-project.onrender.com/
+An example of this application has been deployed on render: https://fund-holdings-project.onrender.com/
 
 Technology used includes:
 - Python
