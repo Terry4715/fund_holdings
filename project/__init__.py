@@ -16,18 +16,18 @@ db_name = os.getenv("DB_NAME")
 
 app = Flask(__name__)
 
-keepalive_kwargs = {
-  "keepalives": 1,
-  "keepalives_idle": 1,
-  "keepalives_interval": 1,
-  "keepalives_count": 3
-}
+# keepalive_kwargs = {
+#   "keepalives": 1,
+#   "keepalives_idle": 1,
+#   "keepalives_interval": 1,
+#   "keepalives_count": 3
+# }
 
 # login to the database
 Database.initialise(user=db_user,
                     password=db_password,
                     host=db_host,
-                    database=db_name, **keepalive_kwargs)
+                    database=db_name)  # , **keepalive_kwargs
 
 
 @app.route("/")
@@ -416,6 +416,11 @@ def page_not_found(error):
 def server_error(error):
     # closes any connections to the database that may have been left open
     Database.close_all_connections()
+    Database.initialise(user=db_user,
+                        password=db_password,
+                        host=db_host,
+                        database=db_name)  # , **keepalive_kwargs
+    print("All connection pools closed and reopened")
     return render_template("500.html"), 500
 
 
