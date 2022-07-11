@@ -16,18 +16,18 @@ db_name = os.getenv("DB_NAME")
 
 app = Flask(__name__)
 
-# keepalive_kwargs = {
-#   "keepalives": 1,
-#   "keepalives_idle": 1,
-#   "keepalives_interval": 1,
-#   "keepalives_count": 3
-# }
+keepalive_kwargs = {
+  "keepalives": 1,
+  "keepalives_idle": 1,
+  "keepalives_interval": 1,
+  "keepalives_count": 3
+}
 
 # login to the database
 Database.initialise(user=db_user,
                     password=db_password,
                     host=db_host,
-                    database=db_name)  # , **keepalive_kwargs
+                    database=db_name, **keepalive_kwargs)
 
 
 @app.route("/")
@@ -41,30 +41,16 @@ def home():
         FID = 1
         fund_type = 'Blended'
 
-    try:
-        # load available fund holdings dates from database based on FID
-        with CursorFromPool() as cursor:
-            sql_values = [FID] * 1
-            sql_insert = '''SELECT DISTINCT fund_holding_date
-                            FROM fund_holdings
-                            WHERE fund_id = %s
-                            ORDER BY fund_holding_date DESC;'''
-            cursor.execute(sql_insert, sql_values)
-            # converts sql response from cursor object to a list of tuples
-            sql_dates = cursor.fetchall()
-    except EOFError:
-        print("Connection issue with the database... trying again")
-    finally:
-        # load available fund holdings dates from database based on FID
-        with CursorFromPool() as cursor:
-            sql_values = [FID] * 1
-            sql_insert = '''SELECT DISTINCT fund_holding_date
-                            FROM fund_holdings
-                            WHERE fund_id = %s
-                            ORDER BY fund_holding_date DESC;'''
-            cursor.execute(sql_insert, sql_values)
-            # converts sql response from cursor object to a list of tuples
-            sql_dates = cursor.fetchall()
+    # load available fund holdings dates from database based on FID
+    with CursorFromPool() as cursor:
+        sql_values = [FID] * 1
+        sql_insert = '''SELECT DISTINCT fund_holding_date
+                        FROM fund_holdings
+                        WHERE fund_id = %s
+                        ORDER BY fund_holding_date DESC;'''
+        cursor.execute(sql_insert, sql_values)
+        # converts sql response from cursor object to a list of tuples
+        sql_dates = cursor.fetchall()
 
     # creates a list of tuples with formatted dates
     ddates = []
@@ -419,7 +405,7 @@ def server_error(error):
     Database.initialise(user=db_user,
                         password=db_password,
                         host=db_host,
-                        database=db_name)  # , **keepalive_kwargs
+                        database=db_name, **keepalive_kwargs)
     print("All connection pools closed and reopened")
     return render_template("500.html"), 500
 
